@@ -20,7 +20,6 @@ except ImportError:
 APP_NAME = "AURA"
 APPDATA = os.environ.get("APPDATA", ".")
 BASE_DIR = os.path.join(APPDATA, "AURA_Prank")
-DESKTOP_FILES_DIR = os.path.join(BASE_DIR, "files")
 
 MESSAGES = [
     "AURA +10000", "AURA +100000000000", "AURA +999999999999",
@@ -57,23 +56,21 @@ def set_wallpaper(path):
             SPI_SETDESKWALLPAPER, 0, path,
             SPIF_UPDATEINIFILE | SPIF_SENDCHANGE
         )
-    except Exception as e:
-        print(f"[!] Wallpaper error: {e}")
+    except Exception:
+        pass
 
 def play_sound(path):
     if not HAS_PYGAME:
-        print("[!] pygame not found, sound disabled")
         return
     try:
         pygame.mixer.init()
         pygame.mixer.music.load(path)
         pygame.mixer.music.play(-1)
-    except Exception as e:
-        print(f"[!] Sound error: {e}")
+    except Exception:
+        pass
 
 def create_aura_files(count=300):
     desktop = get_desktop_path()
-    os.makedirs(DESKTOP_FILES_DIR, exist_ok=True)
     for i in range(count):
         name = f"AURA_{i:04d}.txt"
         dst = os.path.join(desktop, name)
@@ -99,8 +96,6 @@ def overlay(root, photo_paths):
 
     canvas = tk.Canvas(top, width=sw, height=sh, bg="magenta", highlightthickness=0)
     canvas.pack(fill="both", expand=True)
-
-    # Фикс: привязываем клики к оверлею, чтобы они не проходили на рабочий стол
     canvas.create_rectangle(0, 0, 1, 1, fill="black", outline="")
 
     imgs = []
@@ -112,7 +107,6 @@ def overlay(root, photo_paths):
             pass
 
     if not imgs:
-        print("[!] No photos found, overlay will be empty")
         return
 
     items = []
@@ -163,8 +157,9 @@ def message_loop(root):
     root.after(500, spawn)
 
 def main():
-    schedule_wallpaper_thread = threading.Thread(target=set_wallpaper, args=(resource_path(WALLPAPER_REL),), daemon=True)
-    schedule_wallpaper_thread.start()
+    wp = resource_path(WALLPAPER_REL)
+    if os.path.exists(wp):
+        threading.Thread(target=set_wallpaper, args=(wp,), daemon=True).start()
 
     snd = resource_path(SOUND_REL)
     if os.path.exists(snd):
