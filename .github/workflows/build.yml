@@ -22,15 +22,13 @@ jobs:
           pip install -r requirements.txt pyinstaller
 
       - name: Build exe
-        run: |
-          pyinstaller --noconsole --onefile --name aura ^
-            --add-data "assets;assets" aura.py
+        run: pyinstaller --noconsole --onefile --name aura --add-data "assets;assets" aura.py
 
       - name: Verify exe
+        shell: pwsh
         run: |
           if (-not (Test-Path dist\aura.exe)) { Write-Error "exe not built"; exit 1 }
           Get-Item dist\aura.exe | Select-Object Name, Length
-        shell: pwsh
 
       - uses: actions/upload-artifact@v4
         with:
