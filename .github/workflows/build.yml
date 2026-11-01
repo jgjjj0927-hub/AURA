@@ -1,0 +1,39 @@
+# language: YAML, file: .github/workflows/build.yml
+name: build-aura
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt pyinstaller
+
+      - name: Build exe
+        run: |
+          pyinstaller --noconsole --onefile --name aura ^
+            --add-data "assets;assets" aura.py
+
+      - name: Verify exe
+        run: |
+          if (-not (Test-Path dist\aura.exe)) { Write-Error "exe not built"; exit 1 }
+          Get-Item dist\aura.exe | Select-Object Name, Length
+        shell: pwsh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: aura
+          path: dist/aura.exe
+          if-no-files-found: error
